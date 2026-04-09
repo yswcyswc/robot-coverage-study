@@ -1,25 +1,47 @@
 #include "map_io.h"
 #include "test.h"
+#include "frontier_planner.h"
+#include "random_planner.h"
+// #include "lawnmower_planner.h" 
+// #include "stc_planner.h"
 
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <string>
 
 namespace fs = std::filesystem;
 
 int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        std::cerr << "Usage: coverage_demo <map_file>\n";
+    if (argc != 3) {
+        std::cerr << "Usage: ./coverage_demo <map_file> <frontier|random|lawnmower|stc>\n";
         return 1;
     }
 
     try {
         const fs::path map_path(argv[1]);
+        std::string algo_choice = argv[2];
+        
         GridMap grid_map = loadMap(map_path.string());
-        CoverageResult result = runTestTraversal(grid_map.rows, grid_map.cols, grid_map.start);
+        CoverageResult result;
 
+        // 4 algorithms
+        if (algo_choice == "frontier") {
+            result = runFrontierCoverage(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells);
+        } else if (algo_choice == "random") {
+            result = runRandomTraversal(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells, 500);
+        // } else if (algo_choice == "lawnmower") {
+        //     result = runLawnmowerTraversal(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells);
+        // } else if (algo_choice == "stc") {
+        //     result = runSTCCoverage(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells);
+        } else {
+            std::cerr << "Unknown algorithm: " << algo_choice << "\n";
+            return 1;
+        }
+
+        // Output handling
         fs::create_directories("outputs");
-        fs::path trajectory_path = fs::path("outputs") / (map_path.stem().string() + "_trajectory.csv");
+        fs::path trajectory_path = fs::path("outputs") / (map_path.stem().string() + "_" + algo_choice + "_trajectory.csv");
 
         std::ofstream output(trajectory_path);
         output << "step,row,col\n";
@@ -27,10 +49,13 @@ int main(int argc, char* argv[]) {
             output << i << "," << result.trajectory[i].row << "," << result.trajectory[i].col << "\n";
         }
 
+        std::cout << "----------------------------\n";
         std::cout << "Map: " << map_path.string() << "\n";
-        std::cout << "Trajectory saved to: " << trajectory_path.string() << "\n";
-        std::cout << "Algorithm: test\n";
+        std::cout << "Algorithm: " << algo_choice << "\n";
         std::cout << "Total steps: " << result.total_steps << "\n";
+        std::cout << "Trajectory: " << trajectory_path.string() << "\n";
+        std::cout << "----------------------------\n";
+
     } catch (const std::exception& error) {
         std::cerr << "Error: " << error.what() << "\n";
         return 1;

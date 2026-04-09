@@ -59,12 +59,16 @@ def build_image(rows, cols, grid, visited, frontier):
 
 
 def main():
-    if len(sys.argv) != 2:
-        print("Usage: python visualizer.py <map_file>")
+    if len(sys.argv) < 2:
+        print("Usage: python visualizer.py <map_file> <optional: algorithm_name>")
         sys.exit(1)
 
     map_path = Path(sys.argv[1])
-    trajectory_path = Path("outputs") / f"{map_path.stem}_trajectory.csv"
+
+    algo_name = sys.argv[2] if len(sys.argv) > 2 else "frontier" 
+
+    trajectory_path = Path("outputs") / f"{map_path.stem}_{algo_name}_trajectory.csv"
+    
     if not trajectory_path.exists():
         print(f"Missing trajectory file: {trajectory_path}")
         sys.exit(1)

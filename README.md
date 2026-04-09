@@ -12,21 +12,21 @@
 ## Build
 
 ```bash
-g++ -std=c++17 -O2 main.cpp map_io.cpp test.cpp
+g++ -std=c++17 -O2 main.cpp map_io.cpp frontier_planner.cpp random_planner.cpp # to be updated
 ```
 
 ## Run
 
 ```bash
-./a.out maps/open_room.txt
-./a.out maps/narrow_corridor.txt
-./a.out maps/cluttered_room.txt
+./a.out maps/open_room.txt frontier # replace the last argument with the planner used
+./a.out maps/narrow_corridor.txt frontier # replace the last argument with the planner used
+./a.out maps/cluttered_room.txt frontier # replace the last argument with the planner used
 ```
 
 ## Visualize
 
 ```bash
-python3 visualizer.py maps/open_room.txt
-python3 visualizer.py maps/narrow_corridor.txt
-python3 visualizer.py maps/cluttered_room.txt
+python3 visualizer.py maps/open_room.txt frontier # replace the last argument
+python3 visualizer.py maps/narrow_corridor.txt frontier # replace the last argument
+python3 visualizer.py maps/cluttered_room.txt frontier # replace the last argument
 ```
