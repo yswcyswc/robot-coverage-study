@@ -7,12 +7,14 @@
 - `map_io.cpp` / `map_io.h` - map loading
 - `maps/` - test maps
 - `visualizer.py` - animates the moving robot and saves the final result
-- `outputs/` - generated trajectory CSVs and images
+- `outputs/trajectories/` - generated trajectory CSVs
+- `outputs/images/` - generated coverage images
+- `outputs/gifs/` - generated coverage animations
 
 ## Build
 
 ```bash
-g++ -std=c++17 -O2 main.cpp map_io.cpp frontier_planner.cpp random_planner.cpp # to be updated
+g++ -std=c++17 -O2 main.cpp map_io.cpp frontier_planner.cpp random_planner.cpp lawnmower.cpp
 ```
 
 ## Run
