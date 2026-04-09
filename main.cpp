@@ -2,7 +2,7 @@
 #include "test.h"
 #include "frontier_planner.h"
 #include "random_planner.h"
-// #include "lawnmower_planner.h" 
+#include "lawnmower.h"
 // #include "stc_planner.h"
 
 #include <filesystem>
@@ -30,8 +30,8 @@ int main(int argc, char* argv[]) {
             result = runFrontierCoverage(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells);
         } else if (algo_choice == "random") {
             result = runRandomTraversal(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells, 500);
-        // } else if (algo_choice == "lawnmower") {
-        //     result = runLawnmowerTraversal(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells);
+        } else if (algo_choice == "lawnmower") {
+            result = runLawnmowerTraversal(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells);
         // } else if (algo_choice == "stc") {
         //     result = runSTCCoverage(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells);
         } else {
@@ -40,8 +40,9 @@ int main(int argc, char* argv[]) {
         }
 
         // Output handling
-        fs::create_directories("outputs");
-        fs::path trajectory_path = fs::path("outputs") / (map_path.stem().string() + "_" + algo_choice + "_trajectory.csv");
+        fs::create_directories(fs::path("outputs") / "trajectories");
+        fs::path trajectory_path = fs::path("outputs") / "trajectories" /
+                                   (map_path.stem().string() + "_" + algo_choice + "_trajectory.csv");
 
         std::ofstream output(trajectory_path);
         output << "step,row,col\n";

@@ -67,7 +67,7 @@ def main():
 
     algo_name = sys.argv[2] if len(sys.argv) > 2 else "frontier" 
 
-    trajectory_path = Path("outputs") / f"{map_path.stem}_{algo_name}_trajectory.csv"
+    trajectory_path = Path("outputs") / "trajectories" / f"{map_path.stem}_{algo_name}_trajectory.csv"
     
     if not trajectory_path.exists():
         print(f"Missing trajectory file: {trajectory_path}")
@@ -76,8 +76,11 @@ def main():
     rows, cols, start, grid = load_map(map_path)
     trajectory = load_trajectory(trajectory_path)
     Path("outputs").mkdir(exist_ok=True)
-    output_png = Path("outputs") / f"{map_path.stem}_coverage.png"
-    output_gif = Path("outputs") / f"{map_path.stem}_coverage.gif"
+    Path("outputs/trajectories").mkdir(parents=True, exist_ok=True)
+    Path("outputs/images").mkdir(parents=True, exist_ok=True)
+    Path("outputs/gifs").mkdir(parents=True, exist_ok=True)
+    output_png = Path("outputs") / "images" / f"{map_path.stem}_coverage_{algo_name}.png"
+    output_gif = Path("outputs") / "gifs" / f"{map_path.stem}_coverage_{algo_name}.gif"
 
     fig, ax = plt.subplots(figsize=(8, 6))
     ax.set_title(f"Coverage Path: {map_path.stem}")
