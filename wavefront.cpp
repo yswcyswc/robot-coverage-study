@@ -3,7 +3,6 @@
 #include <queue>
 #include <string>
 #include <vector>
-#include <algorithm>
 
 
 /*
@@ -95,29 +94,33 @@ void buildWavefrontCoverage(Point curr,
 
     int dr[] = {0, 0, 1, -1};
     int dc[] = {1, -1, 0, 0};
-    std::vector<Point> neighbors;
+    
+    while (true) {
+        Point next = {-1, -1};
+        int best_dist = -1;
 
-    for (int i = 0; i < 4; ++i) {
-        int nextR = curr.row + dr[i];
-        int nextC = curr.col + dc[i];
+        for (int i = 0; i < 4; ++i) {
+            int nextR = curr.row + dr[i];
+            int nextC = curr.col + dc[i];
 
-        if (nextR < 0 || nextR >= dist.size() || nextC < 0 || nextC >= dist[0].size()) {
-            continue;
+            if (nextR < 0 || nextR >= dist.size() || nextC < 0 || nextC >= dist[0].size()) {
+                continue;
+            }
+
+            if (dist[nextR][nextC] == -1 || visited[nextR][nextC]) {
+                continue;
+            }
+
+            if (dist[nextR][nextC] > best_dist) {
+                best_dist = dist[nextR][nextC];
+                next = {nextR, nextC};
+            }
         }
 
-        if (dist[nextR][nextC] == -1 || visited[nextR][nextC]) {
-            continue;
+        if (next.row == -1) {
+            break;
         }
 
-        neighbors.push_back({nextR, nextC});
-    }
-
-    std::sort(neighbors.begin(), neighbors.end(),
-              [&](Point a, Point b) {
-                  return dist[a.row][a.col] > dist[b.row][b.col];
-              });
-
-    for (const Point& next : neighbors) {
         trajectory.push_back(next);
         buildWavefrontCoverage(next, dist, visited, trajectory);
         trajectory.push_back(curr);
