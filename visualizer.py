@@ -2,6 +2,8 @@ from pathlib import Path
 import csv
 import sys
 
+import matplotlib
+matplotlib.use("Agg")
 from matplotlib.animation import FuncAnimation
 import matplotlib.pyplot as plt
 import numpy as np
@@ -127,8 +129,8 @@ def main():
     try:
         animation.save(output_gif, writer="pillow", fps=5)
         print(f"Saved animation to {output_gif}")
-    except Exception:
-        print("Could not save GIF automatically. Showing live animation only.")
+    except Exception as exc:
+        print(f"Could not save GIF automatically: {exc}")
 
     final_visited = set(trajectory)
     final_frontier = compute_frontier(rows, cols, grid, final_visited)
@@ -136,7 +138,8 @@ def main():
     image_artist.set_data(final_image)
     path_line.set_data([col for _, col in trajectory], [row for row, _ in trajectory])
     plt.savefig(output_png, dpi=200)
-    plt.show()
+    print(f"Saved image to {output_png}")
+    plt.close(fig)
 
 
 if __name__ == "__main__":

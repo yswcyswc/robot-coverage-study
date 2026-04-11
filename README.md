@@ -6,7 +6,7 @@
 - `test.cpp` / `test.h` - very simple traversal algorithm only
 - `map_io.cpp` / `map_io.h` - map loading
 - `maps/` - test maps
-- `visualizer.py` - animates the moving robot and saves the final result
+- `visualizer.py` - saves coverage images and GIF animations
 - `outputs/trajectories/` - generated trajectory CSVs
 - `outputs/images/` - generated coverage images
 - `outputs/gifs/` - generated coverage animations
@@ -33,6 +33,10 @@ python3 visualizer.py maps/narrow_corridor.txt frontier # replace the last argum
 python3 visualizer.py maps/cluttered_room.txt frontier # replace the last argument
 ```
 
+The visualizer saves output files instead of opening a live popup window:
+- `outputs/images/` for final PNGs
+- `outputs/gifs/` for animated GIFs
+
 ## Results
 
 Results below are from one run of each planner on the three default maps.
@@ -43,7 +47,7 @@ Results below are from one run of each planner on the three default maps.
 | Algorithm | Total Steps | Reachable Free Cells | Unique Visited Cells | Revisit Count | Revisit % |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | frontier | 77 | 76 | 76 | 2 | 2.56% |
-| random | 500 | 76 | 60 | 441 | 88.02% |
+| random | 500 | 76 | 70 | 431 | 86.03% |
 | lawnmower | 83 | 76 | 76 | 8 | 9.52% |
 | wavefront | 260 | 76 | 76 | 185 | 70.88% |
 | stc | 68 | 76 | 64 | 5 | 7.25% |
@@ -53,7 +57,7 @@ Results below are from one run of each planner on the three default maps.
 | Algorithm | Total Steps | Reachable Free Cells | Unique Visited Cells | Revisit Count | Revisit % |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | frontier | 72 | 53 | 53 | 20 | 27.40% |
-| random | 500 | 53 | 49 | 452 | 90.22% |
+| random | 500 | 53 | 33 | 468 | 93.41% |
 | lawnmower | 79 | 53 | 53 | 27 | 33.75% |
 | wavefront | 122 | 53 | 53 | 70 | 56.91% |
 | stc | 0 | 53 | 0 | 0 | 0.00% |
@@ -62,8 +66,8 @@ Results below are from one run of each planner on the three default maps.
 
 | Algorithm | Total Steps | Reachable Free Cells | Unique Visited Cells | Revisit Count | Revisit % |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| frontier | 113 | 96 | 96 | 18 | 15.79% |
-| random | 500 | 96 | 45 | 456 | 91.02% |
-| lawnmower | 239 | 96 | 96 | 144 | 60.00% |
-| wavefront | 312 | 96 | 96 | 217 | 69.33% |
-| stc | 93 | 96 | 94 | 0 | 0.00% |
+| frontier | 127 | 92 | 92 | 36 | 28.13% |
+| random | 500 | 92 | 51 | 450 | 89.82% |
+| lawnmower | 167 | 92 | 92 | 76 | 45.24% |
+| wavefront | 280 | 92 | 92 | 189 | 67.26% |
+| stc | 92 | 92 | 92 | 1 | 1.08% |
