@@ -1,12 +1,14 @@
 #include "lawnmower.h"
 
 #include <algorithm>
+#include <cmath>
 #include <queue>
 #include <set>
 #include <utility>
 #include <vector>
 
 /*
+Boustrophedon-inspired lawnmower sweep
 https://publications.ri.cmu.edu/storage/publications/pub_files/pub1/choset_howie_1997_5/choset_howie_1997_5.pdf
 
 1. Find all free cells reachable from the start cell.
@@ -15,7 +17,7 @@ https://publications.ri.cmu.edu/storage/publications/pub_files/pub1/choset_howie
    - for the next row, visit reachable free cells right-to-left
 3. For each next sweep target:
    - if the robot is already there, continue
-   - otherwise, run BFS on free cells to get a shortest path
+   - otherwise, run A* on free cells to get a shortest path
    - append that path to the trajectory
 4. Mark visited cells along the way and stop when every reachable free cell
    has been covered.
@@ -26,37 +28,67 @@ bool isFreeCell(int row, int col, int rows, int cols,
     return row >= 0 && row < rows && col >= 0 && col < cols && grid[row][col] == '.';
 }
 
-std::vector<Point> buildShortestPath(Point start, Point goal, int rows, int cols,
-                                     const std::vector<std::string>& grid) {
-    std::queue<Point> frontier;
-    std::vector<std::vector<bool>> seen(rows, std::vector<bool>(cols, false));
-    std::vector<std::vector<Point>> parent(rows, std::vector<Point>(cols, {-1, -1}));
+int heuristic(Point a, Point b) {
+    return std::abs(a.row - b.row) + std::abs(a.col - b.col);
+}
 
-    frontier.push(start);
-    seen[start.row][start.col] = true;
+std::vector<Point> buildAStarPath(Point start, Point goal, int rows, int cols,
+                                  const std::vector<std::string>& grid) {
+    struct SearchNode {
+        int f;
+        int g;
+        Point p;
+    };
+
+    struct CompareNode {
+        bool operator()(const SearchNode& a, const SearchNode& b) const {
+            return a.f > b.f;
+        }
+    };
+
+    std::priority_queue<SearchNode, std::vector<SearchNode>, CompareNode> frontier;
+    std::vector<std::vector<int>> best_g(rows, std::vector<int>(cols, -1));
+    std::vector<std::vector<Point>> parent(rows, std::vector<Point>(cols, {-1, -1}));
 
     const int dr[] = {0, 0, 1, -1};
     const int dc[] = {1, -1, 0, 0};
 
+    best_g[start.row][start.col] = 0;
+    frontier.push({heuristic(start, goal), 0, start});
+
     while (!frontier.empty()) {
-        Point current = frontier.front();
+        SearchNode node = frontier.top();
         frontier.pop();
+        Point current = node.p;
+
+        if (node.g != best_g[current.row][current.col]) {
+            continue;
+        }
+
+        if (current.row == goal.row && current.col == goal.col) {
+            break;
+        }
 
         for (int i = 0; i < 4; ++i) {
-            int next_row = current.row + dr[i];
-            int next_col = current.col + dc[i];
+            int nextR = current.row + dr[i];
+            int nextC = current.col + dc[i];
 
-            if (!isFreeCell(next_row, next_col, rows, cols, grid) || seen[next_row][next_col]) {
+            if (!isFreeCell(nextR, nextC, rows, cols, grid)) {
                 continue;
             }
 
-            seen[next_row][next_col] = true;
-            parent[next_row][next_col] = current;
-            frontier.push({next_row, next_col});
+            int next_g = node.g + 1;
+            if (best_g[nextR][nextC] != -1 && next_g >= best_g[nextR][nextC]) {
+                continue;
+            }
+
+            best_g[nextR][nextC] = next_g;
+            parent[nextR][nextC] = current;
+            frontier.push({next_g + heuristic({nextR, nextC}, goal), next_g, {nextR, nextC}});
         }
     }
 
-    if (!seen[goal.row][goal.col]) {
+    if (best_g[goal.row][goal.col] == -1) {
         return {};
     }
 
@@ -90,16 +122,16 @@ std::set<std::pair<int, int>> findReachableCells(int rows, int cols, Point start
         frontier.pop();
 
         for (int i = 0; i < 4; ++i) {
-            const int next_row = current.row + dr[i];
-            const int next_col = current.col + dc[i];
-            const std::pair<int, int> next = {next_row, next_col};
+            const int nextR = current.row + dr[i];
+            const int nextC = current.col + dc[i];
+            const std::pair<int, int> next = {nextR, nextC};
 
-            if (!isFreeCell(next_row, next_col, rows, cols, grid) || reachable.count(next) > 0) {
+            if (!isFreeCell(nextR, nextC, rows, cols, grid) || reachable.count(next) > 0) {
                 continue;
             }
 
             reachable.insert(next);
-            frontier.push({next_row, next_col});
+            frontier.push({nextR, nextC});
         }
     }
 
@@ -151,7 +183,7 @@ CoverageResult runLawnmowerTraversal(int rows, int cols, Point start,
             continue;
         }
 
-        std::vector<Point> path = buildShortestPath(current, target, rows, cols, grid);
+        std::vector<Point> path = buildAStarPath(current, target, rows, cols, grid);
         if (path.empty()) {
             continue;
         }

@@ -6,7 +6,7 @@
 
 
 /*
-Planning Paths of Complete Coverage of an Unstructured Environment by a Mobile Robot
+Inspired by Planning Paths of Complete Coverage of an Unstructured Environment by a Mobile Robot
 Zelinsky, Jarvis, Byrne, Yuta
 
 Pseudocode:
@@ -86,10 +86,7 @@ Point findWavefrontGoal(Point start, int r, int c, const std::vector<std::string
     return goal;
 }
 
-void buildWavefrontCoverage(Point curr,
-                            const std::vector<std::vector<int>>& dist,
-                            std::vector<std::vector<bool>>& visited,
-                            std::vector<Point>& trajectory) {
+void buildWavefrontCoverage(Point curr, const std::vector<std::vector<int>>& dist, std::vector<std::vector<bool>>& visited, std::vector<Point>& trajectory) {
     visited[curr.row][curr.col] = true;
 
     int dr[] = {0, 0, 1, -1};
