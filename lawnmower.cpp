@@ -7,6 +7,8 @@
 #include <vector>
 
 /*
+https://publications.ri.cmu.edu/storage/publications/pub_files/pub1/choset_howie_1997_5/choset_howie_1997_5.pdf
+
 1. Find all free cells reachable from the start cell.
 2. Build a sweep order row by row:
    - for one row, visit reachable free cells left-to-right
@@ -26,10 +28,6 @@ bool isFreeCell(int row, int col, int rows, int cols,
 
 std::vector<Point> buildShortestPath(Point start, Point goal, int rows, int cols,
                                      const std::vector<std::string>& grid) {
-    if (start.row == goal.row && start.col == goal.col) {
-        return {};
-    }
-
     std::queue<Point> frontier;
     std::vector<std::vector<bool>> seen(rows, std::vector<bool>(cols, false));
     std::vector<std::vector<Point>> parent(rows, std::vector<Point>(cols, {-1, -1}));
@@ -44,13 +42,9 @@ std::vector<Point> buildShortestPath(Point start, Point goal, int rows, int cols
         Point current = frontier.front();
         frontier.pop();
 
-        if (current.row == goal.row && current.col == goal.col) {
-            break;
-        }
-
         for (int i = 0; i < 4; ++i) {
-            const int next_row = current.row + dr[i];
-            const int next_col = current.col + dc[i];
+            int next_row = current.row + dr[i];
+            int next_col = current.col + dc[i];
 
             if (!isFreeCell(next_row, next_col, rows, cols, grid) || seen[next_row][next_col]) {
                 continue;
@@ -67,7 +61,7 @@ std::vector<Point> buildShortestPath(Point start, Point goal, int rows, int cols
     }
 
     std::vector<Point> path;
-    for (Point current = goal; 
+    for (Point current = goal;
         !(current.row == start.row && current.col == start.col);
          current = parent[current.row][current.col]) {
         path.push_back(current);
@@ -139,13 +133,13 @@ std::vector<Point> buildSweepTargets(int rows, int cols,
 CoverageResult runLawnmowerTraversal(int rows, int cols, Point start,
                                      const std::vector<std::string>& grid) {
     CoverageResult result;
-    const std::set<std::pair<int, int>> reachable = findReachableCells(rows, cols, start, grid);
+    std::set<std::pair<int, int>> reachable = findReachableCells(rows, cols, start, grid);
 
     if (reachable.empty()) {
         return result;
     }
 
-    const std::vector<Point> sweep_targets = buildSweepTargets(rows, cols, reachable);
+    std::vector<Point> sweep_targets = buildSweepTargets(rows, cols, reachable);
     std::set<std::pair<int, int>> covered;
 
     Point current = start;
@@ -153,16 +147,12 @@ CoverageResult runLawnmowerTraversal(int rows, int cols, Point start,
     covered.insert({current.row, current.col});
 
     for (const Point& target : sweep_targets) {
-        if (covered.size() == reachable.size()) {
-            break;
-        }
-
         if (covered.count({target.row, target.col}) > 0) {
             continue;
         }
 
-        const std::vector<Point> path = buildShortestPath(current, target, rows, cols, grid);
-        if (path.empty() && !(current.row == target.row && current.col == target.col)) {
+        std::vector<Point> path = buildShortestPath(current, target, rows, cols, grid);
+        if (path.empty()) {
             continue;
         }
 
@@ -173,6 +163,6 @@ CoverageResult runLawnmowerTraversal(int rows, int cols, Point start,
         }
     }
 
-    result.total_steps = static_cast<int>(result.trajectory.size()) - 1;
+    result.total_steps = result.trajectory.size() - 1;
     return result;
 }
