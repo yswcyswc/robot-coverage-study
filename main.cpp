@@ -12,6 +12,7 @@
 #include <queue>
 #include <set>
 #include <string>
+#include <chrono>
 
 namespace fs = std::filesystem;
 
@@ -70,6 +71,8 @@ int main(int argc, char* argv[]) {
         GridMap grid_map = loadMap(map_path.string());
         CoverageResult result;
 
+        auto start_time = std::chrono::high_resolution_clock::now();
+
         // Planner selection
         if (algo_choice == "frontier") {
             result = runFrontierCoverage(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells);
@@ -77,14 +80,20 @@ int main(int argc, char* argv[]) {
             result = runRandomTraversal(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells, 500);
         } else if (algo_choice == "lawnmower") {
             result = runLawnmowerTraversal(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells);
-        } else if (algo_choice == "boustrophedon_grid") {
-            result = runBoustrophedonGridTraversal(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells);
+        // } else if (algo_choice == "boustrophedon_grid") {
+        //     result = runBoustrophedonGridTraversal(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells);
         } else if (algo_choice == "stc") {
             result = runSTCCoverage(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells);
         } else {
             std::cerr << "Unknown algorithm: " << algo_choice << "\n";
             return 1;
         }
+
+        auto end_time = std::chrono::high_resolution_clock::now();
+        
+        // Calculate planning time (in milliseconds)
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+        double planning_time_ms = duration.count() / 1000.0;
 
         int reachable_free_cells = countReachableFreeCells(
             grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells);
@@ -115,6 +124,7 @@ int main(int argc, char* argv[]) {
         std::cout << "----------------------------\n";
         std::cout << "Map: " << map_path.string() << "\n";
         std::cout << "Algorithm: " << algo_choice << "\n";
+        std::cout << "Planning Time: " << planning_time_ms << " ms\n"; // New Metric
         std::cout << "Total steps: " << result.total_steps << "\n";
         std::cout << "Reachable free cells: " << reachable_free_cells << "\n";
         std::cout << "Unique visited cells: " << unique_visited_cells << "\n";
