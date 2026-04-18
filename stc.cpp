@@ -9,13 +9,21 @@
 #include <algorithm>
 
 /*
+STC1-style strict Spanning Tree Coverage implementation.
+
+This file follows the main idea of the STC1 algorithm from:
 https://ieeexplore.ieee.org/document/1013479
 
-Strict stc implementation:
-1. Merge the map into 2x2 major cells.
-2. Keep only major cells whose four sub-cells are free.
-3. Build a recursive spanning-tree route with fixed neighbor scanning order.
-4. Convert the major-cell route into a path through the smaller sub-cells.
+The implementation is "strict" because it only allows 2x2 major cells whose
+four original grid cells are all free. It does not implement STC2's partially
+occupied major cells or edge-type-dependent motion rules.
+
+High-level flow:
+1. Compress the original grid into 2x2 major cells.
+2. Keep only major cells whose four sub-cells are obstacle-free.
+3. Recursively build a spanning tree over those valid major cells.
+4. Convert each spanning-tree edge into concrete moves through the original
+   grid cells, tracing around the tree to form the coverage trajectory.
 */
 
 struct EdgeKey {
@@ -47,7 +55,8 @@ bool isValidMajorCell(int cell_row, int cell_col, int rows, int cols,
     if (base_row + 1 >= rows || base_col + 1 >= cols) {
         return false;
     }
-
+    // robot only enters a 2 * 2 block if that entire block is safe. If any of the 4 cells has
+    // an obstacle, the whole cell is rejected
     return isFreeSTCCell(base_row, base_col, rows, cols, grid) &&
            isFreeSTCCell(base_row, base_col + 1, rows, cols, grid) &&
            isFreeSTCCell(base_row + 1, base_col, rows, cols, grid) &&

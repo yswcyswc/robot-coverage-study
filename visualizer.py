@@ -8,6 +8,8 @@ from matplotlib.animation import FuncAnimation
 import matplotlib.pyplot as plt
 import numpy as np
 
+MAX_GIF_FRAMES = 120
+
 
 def load_map(map_path):
     with open(map_path, "r", encoding="utf-8") as f:
@@ -67,7 +69,17 @@ def main():
 
     map_path = Path(sys.argv[1])
 
-    algo_name = sys.argv[2] if len(sys.argv) > 2 else "frontier" 
+    algo_name = sys.argv[2] if len(sys.argv) > 2 else "frontier"
+    extra_args = sys.argv[3:]
+    save_gif = "--no-gif" not in extra_args
+
+    max_gif_frames = MAX_GIF_FRAMES
+    if "--frames" in extra_args:
+        frame_arg_index = extra_args.index("--frames") + 1
+        if frame_arg_index >= len(extra_args):
+            print("Missing frame count after --frames")
+            sys.exit(1)
+        max_gif_frames = max(1, int(extra_args[frame_arg_index]))
 
     trajectory_path = Path("outputs") / "trajectories" / f"{map_path.stem}_{algo_name}_trajectory.csv"
     
@@ -77,20 +89,30 @@ def main():
 
     rows, cols, start, grid = load_map(map_path)
     trajectory = load_trajectory(trajectory_path)
+    if not trajectory:
+        print(f"Trajectory is empty: {trajectory_path}")
+        sys.exit(1)
+
     Path("outputs").mkdir(exist_ok=True)
     Path("outputs/trajectories").mkdir(parents=True, exist_ok=True)
     Path("outputs/images").mkdir(parents=True, exist_ok=True)
     Path("outputs/gifs").mkdir(parents=True, exist_ok=True)
     output_png = Path("outputs") / "images" / f"{map_path.stem}_coverage_{algo_name}.png"
     output_gif = Path("outputs") / "gifs" / f"{map_path.stem}_coverage_{algo_name}.gif"
+    frame_count = min(len(trajectory), max_gif_frames)
+    frame_indices = np.linspace(0, len(trajectory) - 1, frame_count, dtype=int)
 
     fig, ax = plt.subplots(figsize=(8, 6))
     ax.set_title(f"Coverage Path: {map_path.stem}")
-    ax.set_xticks(range(cols))
-    ax.set_yticks(range(rows))
+    if rows <= 30 and cols <= 30:
+        ax.set_xticks(range(cols))
+        ax.set_yticks(range(rows))
+        ax.grid(color="white", linewidth=0.5)
+    else:
+        ax.set_xticks([])
+        ax.set_yticks([])
     ax.set_xlim(-0.5, cols - 0.5)
     ax.set_ylim(rows - 0.5, -0.5)
-    ax.grid(color="white", linewidth=0.5)
 
     empty_visited = set()
     empty_frontier = compute_frontier(rows, cols, grid, empty_visited)
@@ -100,10 +122,26 @@ def main():
     robot_marker = ax.scatter([], [], color="#1d3557", s=90, label="robot", zorder=4)
     frontier_patch = plt.Line2D([0], [0], marker="s", color="w", markerfacecolor="#f7c53d",
                                 markersize=10, linestyle="", label="frontier")
-    ax.legend(handles=[start_marker, robot_marker, path_line, frontier_patch])
+    ax.legend(
+        handles=[start_marker, robot_marker, path_line, frontier_patch],
+        loc="upper left",
+        bbox_to_anchor=(1.02, 1.0),
+        borderaxespad=0,
+    )
 
-    def update(frame):
-        partial = trajectory[: frame + 1]
+    final_visited = set(trajectory)
+    final_frontier = compute_frontier(rows, cols, grid, final_visited)
+    final_image = build_image(rows, cols, grid, final_visited, final_frontier)
+    image_artist.set_data(final_image)
+    path_line.set_data([col for _, col in trajectory], [row for row, _ in trajectory])
+    robot_row, robot_col = trajectory[-1]
+    robot_marker.set_offsets([[robot_col, robot_row]])
+    plt.tight_layout(rect=[0, 0, 0.82, 1])
+    plt.savefig(output_png, dpi=200)
+    print(f"Saved image to {output_png}")
+
+    def update(frame_index):
+        partial = trajectory[: frame_index + 1]
         visited = set(partial)
         frontier = compute_frontier(rows, cols, grid, visited)
         image_artist.set_data(build_image(rows, cols, grid, visited, frontier))
@@ -116,29 +154,30 @@ def main():
         robot_marker.set_offsets([[robot_col, robot_row]])
         return image_artist, path_line, robot_marker
 
-    animation = FuncAnimation(
-        fig,
-        update,
-        frames=len(trajectory),
-        interval=200,
-        blit=False,
-        repeat=False,
-    )
+    if save_gif:
+        animation = FuncAnimation(
+            fig,
+            update,
+            frames=frame_indices,
+            interval=200,
+            blit=False,
+            repeat=False,
+        )
 
-    plt.tight_layout()
-    try:
-        animation.save(output_gif, writer="pillow", fps=5)
-        print(f"Saved animation to {output_gif}")
-    except Exception as exc:
-        print(f"Could not save GIF automatically: {exc}")
+        plt.tight_layout(rect=[0, 0, 0.82, 1])
+        try:
+            if len(trajectory) > max_gif_frames:
+                print(
+                    f"Trajectory has {len(trajectory)} steps; "
+                    f"saving sampled GIF with {max_gif_frames} frames."
+                )
+            animation.save(output_gif, writer="pillow", fps=5)
+            print(f"Saved animation to {output_gif}")
+        except Exception as exc:
+            print(f"Could not save GIF automatically: {exc}")
+    else:
+        print("Skipped GIF because --no-gif was provided.")
 
-    final_visited = set(trajectory)
-    final_frontier = compute_frontier(rows, cols, grid, final_visited)
-    final_image = build_image(rows, cols, grid, final_visited, final_frontier)
-    image_artist.set_data(final_image)
-    path_line.set_data([col for _, col in trajectory], [row for row, _ in trajectory])
-    plt.savefig(output_png, dpi=200)
-    print(f"Saved image to {output_png}")
     plt.close(fig)
 
 

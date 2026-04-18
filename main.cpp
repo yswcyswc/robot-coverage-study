@@ -3,8 +3,8 @@
 #include "frontier_planner.h"
 #include "random_planner.h"
 #include "lawnmower.h"
+#include "boustrophedon_grid.h"
 #include "stc.h"
-#include "wavefront.h"
 
 #include <filesystem>
 #include <fstream>
@@ -59,7 +59,7 @@ int countReachableFreeCells(int rows, int cols, Point start,
 
 int main(int argc, char* argv[]) {
     if (argc != 3) {
-        std::cerr << "Usage: ./coverage_demo <map_file> <frontier|random|lawnmower|stc|wavefront>\n";
+        std::cerr << "Usage: ./coverage_demo <map_file> <frontier|random|lawnmower|boustrophedon_grid|stc>\n";
         return 1;
     }
 
@@ -70,17 +70,17 @@ int main(int argc, char* argv[]) {
         GridMap grid_map = loadMap(map_path.string());
         CoverageResult result;
 
-        // 4 algorithms
+        // Planner selection
         if (algo_choice == "frontier") {
             result = runFrontierCoverage(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells);
         } else if (algo_choice == "random") {
             result = runRandomTraversal(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells, 500);
         } else if (algo_choice == "lawnmower") {
             result = runLawnmowerTraversal(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells);
+        } else if (algo_choice == "boustrophedon_grid") {
+            result = runBoustrophedonGridTraversal(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells);
         } else if (algo_choice == "stc") {
             result = runSTCCoverage(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells);
-        } else if (algo_choice == "wavefront") {
-            result = runWavefrontCoverage(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells);
         } else {
             std::cerr << "Unknown algorithm: " << algo_choice << "\n";
             return 1;
