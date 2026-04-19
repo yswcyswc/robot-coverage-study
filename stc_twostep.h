@@ -1,12 +1,12 @@
-#ifndef LAWNMOWER_H
-#define LAWNMOWER_H
+#ifndef STC_TWOSTEP_H
+#define STC_TWOSTEP_H
 
 #include <string>
 #include <vector>
 
 #include "test.h"
 
-CoverageResult runLawnmowerTraversal(int rows, int cols, Point start,
+CoverageResult runSTCTwoStepCoverage(int rows, int cols, Point start,
                                      const std::vector<std::string>& grid);
 
 #endif

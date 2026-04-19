@@ -13,6 +13,7 @@ STC1-style strict Spanning Tree Coverage implementation.
 
 This file follows the main idea of the STC1 algorithm from:
 https://ieeexplore.ieee.org/document/1013479
+with some simplification on 
 
 The implementation is "strict" because it only allows 2x2 major cells whose
 four original grid cells are all free. It does not implement STC2's partially

@@ -3,9 +3,8 @@
 #include "frontier_planner.h"
 #include "random_planner.h"
 #include "lawnmower.h"
-#include "boustrophedon_grid.h"
 #include "stc.h"
-
+#include "stc_twostep.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -60,7 +59,7 @@ int countReachableFreeCells(int rows, int cols, Point start,
 
 int main(int argc, char* argv[]) {
     if (argc != 3) {
-        std::cerr << "Usage: ./coverage_demo <map_file> <frontier|random|lawnmower|boustrophedon_grid|stc>\n";
+        std::cerr << "Usage: ./coverage_demo <map_file> <frontier|random|lawnmower|stc|stc_twostep>\n";
         return 1;
     }
 
@@ -80,10 +79,10 @@ int main(int argc, char* argv[]) {
             result = runRandomTraversal(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells, 500);
         } else if (algo_choice == "lawnmower") {
             result = runLawnmowerTraversal(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells);
-        // } else if (algo_choice == "boustrophedon_grid") {
-        //     result = runBoustrophedonGridTraversal(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells);
         } else if (algo_choice == "stc") {
             result = runSTCCoverage(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells);
+        } else if (algo_choice == "stc_twostep") {
+            result = runSTCTwoStepCoverage(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells);
         } else {
             std::cerr << "Unknown algorithm: " << algo_choice << "\n";
             return 1;
