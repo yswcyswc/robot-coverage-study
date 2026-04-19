@@ -1,51 +1,61 @@
 #include "frontier_planner.h"
 #include <queue>
-#include <map>
-#include <cmath>
+#include <vector>
 #include <algorithm>
+#include <set>
 
-// check if a cell is valid and not an obstacle
-bool isValid(int r, int c, int rows, int cols, const std::vector<std::string>& grid) {
-    return r >= 0 && r < rows && c >= 0 && c < cols && grid[r][c] == '.';
+// Helper to convert 2D coordinates to a 1D index for flat vectors
+inline int getIdx(int r, int c, int cols) {
+    return r * cols + c;
 }
 
 // A* Search to find the shortest path from 'current' to 'target'
-std::vector<Point> planPathAStar(Point current, Point target, int rows, int cols, const std::vector<std::string>& grid) {
-    auto dist = [](Point a, Point b) { return std::abs(a.row - b.row) + std::abs(a.col - b.col); };
+std::vector<Point> planPathAStarOptimized(Point current, Point target, int rows, int cols, const std::vector<std::string>& grid) {
+    int total_cells = rows * cols;
+    std::vector<int> gScore(total_cells, 1e9);
+    std::vector<int> parent(total_cells, -1);
     
-    std::priority_queue<std::pair<int, std::pair<int, int>>, std::vector<std::pair<int, std::pair<int, int>>>, std::greater<>> pq;
-    std::map<std::pair<int, int>, std::pair<int, int>> parent;
-    std::map<std::pair<int, int>, int> gScore;
+    // priority queue stores {fScore, index}
+    std::priority_queue<std::pair<int, int>, std::vector<std::pair<int, int>>, std::greater<>> pq;
 
-    pq.push({0, {current.row, current.col}});
-    gScore[{current.row, current.col}] = 0;
+    int startIdx = getIdx(current.row, current.col, cols);
+    int targetIdx = getIdx(target.row, target.col, cols);
+
+    gScore[startIdx] = 0;
+    pq.push({std::abs(current.row - target.row) + std::abs(current.col - target.col), startIdx});
 
     int dr[] = {0, 0, 1, -1};
     int dc[] = {1, -1, 0, 0};
 
     while (!pq.empty()) {
-        auto [row, col] = pq.top().second;
+        int currIdx = pq.top().second;
         pq.pop();
 
-        if (row == target.row && col == target.col) {
+        if (currIdx == targetIdx) {
             std::vector<Point> path;
-            std::pair<int, int> curr = {row, col};
-            while (curr.first != current.row || curr.second != current.col) {
-                path.push_back({curr.first, curr.second});
-                curr = parent[curr];
+            int temp = currIdx;
+            while (temp != startIdx) {
+                path.push_back({temp / cols, temp % cols});
+                temp = parent[temp];
             }
             std::reverse(path.begin(), path.end());
             return path;
         }
 
+        int r = currIdx / cols;
+        int c = currIdx % cols;
+
         for (int i = 0; i < 4; ++i) {
-            int nr = row + dr[i], nc = col + dc[i];
-            if (isValid(nr, nc, rows, cols, grid)) {
-                int tentative_g = gScore[{row, col}] + 1;
-                if (gScore.find({nr, nc}) == gScore.end() || tentative_g < gScore[{nr, nc}]) {
-                    gScore[{nr, nc}] = tentative_g;
-                    parent[{nr, nc}] = {row, col};
-                    pq.push({tentative_g + dist({nr, nc}, target), {nr, nc}});
+            int nr = r + dr[i], nc = c + dc[i];
+            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && grid[nr][nc] == '.') {
+                int neighborIdx = getIdx(nr, nc, cols);
+                int tentative_g = gScore[currIdx] + 1;
+
+                if (tentative_g < gScore[neighborIdx]) {
+                    gScore[neighborIdx] = tentative_g;
+                    parent[neighborIdx] = currIdx;
+                    int fScore = tentative_g + std::abs(nr - target.row) + std::abs(nc - target.col);
+                    pq.push({fScore, neighborIdx});
                 }
             }
         }
@@ -53,47 +63,60 @@ std::vector<Point> planPathAStar(Point current, Point target, int rows, int cols
     return {};
 }
 
-CoverageResult runFrontierCoverage(int rows, int cols, Point start, const std::vector<std::string>& grid) {
-    CoverageResult result;
-    std::set<std::pair<int, int>> visited;
-    Point current = start;
+// BFS to find the true nearest frontier
+Point findNearestFrontierBFS(Point start, int rows, int cols, const std::vector<std::string>& grid, const std::vector<bool>& visited) {
+    std::queue<int> q;
+    std::vector<bool> explored(rows * cols, false);
     
-    visited.insert({current.row, current.col});
-    result.trajectory.push_back(current);
+    int startIdx = getIdx(start.row, start.col, cols);
+    q.push(startIdx);
+    explored[startIdx] = true;
 
-    while (true) {
-        std::vector<Point> frontiers;
-        int dr[] = {0, 0, 1, -1};
-        int dc[] = {1, -1, 0, 0};
+    int dr[] = {0, 0, 1, -1};
+    int dc[] = {1, -1, 0, 0};
 
-        // find frontier cells
-        for (auto const& [vr, vc] : visited) {
-            for (int i = 0; i < 4; ++i) {
-                int nr = vr + dr[i], nc = vc + dc[i];
-                if (isValid(nr, nc, rows, cols, grid) && visited.find({nr, nc}) == visited.end()) {
-                    frontiers.push_back({nr, nc});
+    while (!q.empty()) {
+        int currIdx = q.front();
+        q.pop();
+        int r = currIdx / cols;
+        int c = currIdx % cols;
+
+        for (int i = 0; i < 4; ++i) {
+            int nr = r + dr[i], nc = c + dc[i];
+            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+                int nIdx = getIdx(nr, nc, cols);
+                if (grid[nr][nc] == '.' && !explored[nIdx]) {
+                    // if neighbor is unvisited, the current cell (r,c) is a frontier
+                    if (!visited[nIdx]) {
+                        return {nr, nc};
+                    }
+                    explored[nIdx] = true;
+                    q.push(nIdx);
                 }
             }
         }
+    }
+    return {-1, -1}; // no more frontiers
+}
 
-        if (frontiers.empty()) break; // All reachable cells visited
+CoverageResult runFrontierCoverage(int rows, int cols, Point start, const std::vector<std::string>& grid) {
+    CoverageResult result;
+    std::vector<bool> visited(rows * cols, false);
+    Point current = start;
+    
+    visited[getIdx(current.row, current.col, cols)] = true;
+    result.trajectory.push_back(current);
 
-        // select nearest frontier
-        Point nearest = frontiers[0];
-        int minDist = 1e9;
-        for (const auto& f : frontiers) {
-            int d = std::abs(f.row - current.row) + std::abs(f.col - current.col);
-            if (d < minDist) {
-                minDist = d;
-                nearest = f;
-            }
-        }
+    while (true) {
+        Point nearest = findNearestFrontierBFS(current, rows, cols, grid, visited);
+        
+        if (nearest.row == -1) break;
 
-        // plan path
-        std::vector<Point> path = planPathAStar(current, nearest, rows, cols, grid);
+        std::vector<Point> path = planPathAStarOptimized(current, nearest, rows, cols, grid);
+        
         for (const auto& p : path) {
             result.trajectory.push_back(p);
-            visited.insert({p.row, p.col});
+            visited[getIdx(p.row, p.col, cols)] = true;
             current = p;
         }
     }

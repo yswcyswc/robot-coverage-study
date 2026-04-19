@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
         if (algo_choice == "frontier") {
             result = runFrontierCoverage(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells);
         } else if (algo_choice == "random") {
-            result = runRandomTraversal(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells, 500);
+            result = runRandomTraversal(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells, 1000);
         } else if (algo_choice == "lawnmower") {
             result = runLawnmowerTraversal(grid_map.rows, grid_map.cols, grid_map.start, grid_map.cells);
         } else if (algo_choice == "stc") {
