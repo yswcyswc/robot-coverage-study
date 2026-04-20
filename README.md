@@ -63,6 +63,16 @@ Results below are from one run of each planner on every map in `maps/`, except `
 | stc | 0.714 | 92 | 92 | 92 | 100.00% | 1 | 1.08% |
 | stc_twostep | 0.892 | 96 | 92 | 92 | 100.00% | 5 | 5.15% |
 
+### Large 300 (300x300)
+
+| Algorithm | Planning Time (ms) | Total Steps | Reachable Free Cells | Unique Visited Cells | Coverage % | Revisit Count | Revisit % |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| frontier | 840.34 | 89439 | 75420 | 75420 | 100.00% | 14020 | 15.68% |
+| random | 0.117 | 1000 | 75420 | 218 | 0.29% | 783 | 78.22% |
+| lawnmower | 7588.67 | 106772 | 75420 | 75420 | 100.00% | 31353 | 29.36% |
+| stc | 7.42 | 77583 | 75420 | 75130 | 99.62% | 2454 | 3.16% |
+| stc_twostep | 32.85 | 82446 | 75420 | 72738 | 96.44% | 9709 | 11.78% |
+
 ### Large Map 2 (50x50)
 
 | Algorithm | Planning Time (ms) | Total Steps | Reachable Free Cells | Unique Visited Cells | Coverage % | Revisit Count | Revisit % |
