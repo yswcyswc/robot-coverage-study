@@ -185,8 +185,7 @@ static std::vector<Point> laBuildRoundTrip(Point last, Point pivot) {
 }
 
 static Point laFindIntermediateNode(
-    Point from,
-    Point to,
+    Point from, Point to,
     const std::set<std::pair<std::pair<int, int>, std::pair<int, int>>>& edges) {
     const int dr[] = {1, 0, -1, 0};
     const int dc[] = {0, 1, 0, -1};
@@ -203,10 +202,7 @@ static Point laFindIntermediateNode(
 
 static bool laValidUnvisitedMajor(Point cell,
                                   const std::vector<std::vector<int>>& visit_counts,
-                                  int cell_rows,
-                                  int cell_cols,
-                                  int rows,
-                                  int cols,
+                                  int cell_rows, int cell_cols, int rows, int cols,
                                   const std::vector<std::string>& grid) {
     if (cell.row < 0 || cell.row >= cell_rows ||
         cell.col < 0 || cell.col >= cell_cols ||
@@ -220,10 +216,7 @@ static bool laValidUnvisitedMajor(Point cell,
 static int laTwoStepScore(Point current,
                             int direction_index,
                             const std::vector<std::vector<int>>& visit_counts,
-                            int cell_rows,
-                            int cell_cols,
-                            int rows,
-                            int cols,
+                            int cell_rows, int cell_cols, int rows, int cols,
                             const std::vector<std::string>& grid) {
     const int dr[] = {1, 0, -1, 0};
     const int dc[] = {0, 1, 0, -1};
@@ -249,10 +242,7 @@ static int laTwoStepScore(Point current,
 static std::vector<TwoStepCandidate> laBuildCandidates(
     Point current,
     const std::vector<std::vector<int>>& visit_counts,
-    int cell_rows,
-    int cell_cols,
-    int rows,
-    int cols,
+    int cell_rows, int cell_cols, int rows, int cols,
     const std::vector<std::string>& grid) {
     const int dr[] = {1, 0, -1, 0};
     const int dc[] = {0, 1, 0, -1};

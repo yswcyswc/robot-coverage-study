@@ -40,7 +40,7 @@ The visualizer saves output files instead of opening a live popup window:
 
 ## Results
 
-Results below are from one run of each planner on every map in `maps/`, except `large_300.txt` which was intentionally skipped.
+Results below are from one run of each planner on every map in `maps/`.
 `random` is stochastic, so its numbers will vary between runs.
 
 ### Apartment (10x12)

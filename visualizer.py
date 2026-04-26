@@ -44,7 +44,129 @@ def compute_frontier(rows, cols, grid, visited):
     return frontier
 
 
-def build_image(rows, cols, grid, visited, frontier):
+def is_valid_major_cell(cell_row, cell_col, rows, cols, grid):
+    base_row = 2 * cell_row
+    base_col = 2 * cell_col
+    if base_row + 1 >= rows or base_col + 1 >= cols:
+        return False
+
+    return (
+        grid[base_row][base_col] == "."
+        and grid[base_row][base_col + 1] == "."
+        and grid[base_row + 1][base_col] == "."
+        and grid[base_row + 1][base_col + 1] == "."
+    )
+
+
+def major_cell_points(cell):
+    row, col = cell
+    return [
+        (2 * row, 2 * col),
+        (2 * row, 2 * col + 1),
+        (2 * row + 1, 2 * col),
+        (2 * row + 1, 2 * col + 1),
+    ]
+
+
+def compute_twostep_layers(rows, cols, grid, current, visited):
+    if rows % 2 != 0 or cols % 2 != 0:
+        return set(), set()
+
+    current_major = (current[0] // 2, current[1] // 2)
+    visited_major = {(row // 2, col // 2) for row, col in visited}
+    cell_rows = rows // 2
+    cell_cols = cols // 2
+    directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
+
+    immediate = set()
+    second_step = set()
+
+    if is_valid_major_cell(current_major[0], current_major[1], rows, cols, grid):
+        immediate.add(current_major)
+
+    for dr, dc in directions:
+        neighbor = (current_major[0] + dr, current_major[1] + dc)
+        if not (0 <= neighbor[0] < cell_rows and 0 <= neighbor[1] < cell_cols):
+            continue
+        if neighbor in visited_major:
+            continue
+        if not is_valid_major_cell(neighbor[0], neighbor[1], rows, cols, grid):
+            continue
+
+        immediate.add(neighbor)
+
+        ahead = (neighbor[0] + dr, neighbor[1] + dc)
+        if (
+            0 <= ahead[0] < cell_rows
+            and 0 <= ahead[1] < cell_cols
+            and ahead not in visited_major
+            and is_valid_major_cell(ahead[0], ahead[1], rows, cols, grid)
+        ):
+            second_step.add(ahead)
+
+        for side_dr, side_dc in directions:
+            candidate = (neighbor[0] + side_dr, neighbor[1] + side_dc)
+            if (
+                0 <= candidate[0] < cell_rows
+                and 0 <= candidate[1] < cell_cols
+                and candidate not in visited_major
+                and candidate != current_major
+                and is_valid_major_cell(candidate[0], candidate[1], rows, cols, grid)
+            ):
+                second_step.add(candidate)
+
+    second_step -= immediate
+    return immediate, second_step
+
+
+def compute_twostep_frontier(rows, cols, grid, trajectory):
+    discovered = set()
+    for index, current in enumerate(trajectory):
+        visited = set(trajectory[: index + 1])
+        immediate, second_step = compute_twostep_layers(rows, cols, grid, current, visited)
+        discovered.update(immediate)
+        discovered.update(second_step)
+
+    return discovered
+
+
+def compute_twostep_frontier_history(rows, cols, grid, trajectory):
+    discovered = set()
+    visited = set()
+    history = []
+
+    for current in trajectory:
+        visited.add(current)
+        immediate, second_step = compute_twostep_layers(rows, cols, grid, current, visited)
+        discovered.update(immediate)
+        discovered.update(second_step)
+        history.append(set(discovered))
+
+    return history
+
+
+def compute_twostep_frontier_snapshots(rows, cols, grid, trajectory, frame_indices):
+    wanted = set(int(index) for index in frame_indices)
+    wanted.add(len(trajectory) - 1)
+    discovered = set()
+    visited = set()
+    snapshots = {}
+
+    for index, current in enumerate(trajectory):
+        visited.add(current)
+        immediate, second_step = compute_twostep_layers(rows, cols, grid, current, visited)
+        discovered.update(immediate)
+        discovered.update(second_step)
+
+        if index in wanted:
+            snapshots[index] = set(discovered)
+
+    return snapshots
+
+
+def build_image(rows, cols, grid, visited, frontier, immediate=None, second_step=None):
+    immediate = immediate or set()
+    second_step = second_step or set()
     image = np.ones((rows, cols, 3), dtype=float)
     image[:] = np.array([0.95, 0.95, 0.92])
 
@@ -58,6 +180,16 @@ def build_image(rows, cols, grid, visited, frontier):
 
     for r, c in frontier:
         image[r, c] = np.array([0.97, 0.77, 0.24])
+
+    for cell in second_step:
+        for r, c in major_cell_points(cell):
+            if 0 <= r < rows and 0 <= c < cols and grid[r][c] == "." and (r, c) not in visited:
+                image[r, c] = np.array([0.97, 0.77, 0.24])
+
+    for cell in immediate:
+        for r, c in major_cell_points(cell):
+            if 0 <= r < rows and 0 <= c < cols and grid[r][c] == "." and (r, c) not in visited:
+                image[r, c] = np.array([0.97, 0.77, 0.24])
 
     return image
 
@@ -90,8 +222,8 @@ def main():
     rows, cols, start, grid = load_map(map_path)
     trajectory = load_trajectory(trajectory_path)
     if not trajectory:
-        print(f"Trajectory is empty: {trajectory_path}")
-        sys.exit(1)
+        print(f"Trajectory is empty: {trajectory_path}; rendering stationary start state.")
+        trajectory = [start]
 
     Path("outputs").mkdir(exist_ok=True)
     Path("outputs/trajectories").mkdir(parents=True, exist_ok=True)
@@ -101,6 +233,10 @@ def main():
     output_gif = Path("outputs") / "gifs" / f"{map_path.stem}_coverage_{algo_name}.gif"
     frame_count = min(len(trajectory), max_gif_frames)
     frame_indices = np.linspace(0, len(trajectory) - 1, frame_count, dtype=int)
+    twostep_frontier_snapshots = {}
+    if algo_name == "stc_twostep":
+        twostep_frontier_snapshots = compute_twostep_frontier_snapshots(
+            rows, cols, grid, trajectory, frame_indices)
 
     fig, ax = plt.subplots(figsize=(8, 6))
     ax.set_title(f"Coverage Path: {map_path.stem}")
@@ -122,8 +258,9 @@ def main():
     robot_marker = ax.scatter([], [], color="#1d3557", s=90, label="robot", zorder=4)
     frontier_patch = plt.Line2D([0], [0], marker="s", color="w", markerfacecolor="#f7c53d",
                                 markersize=10, linestyle="", label="frontier")
+    legend_handles = [start_marker, robot_marker, path_line, frontier_patch]
     ax.legend(
-        handles=[start_marker, robot_marker, path_line, frontier_patch],
+        handles=legend_handles,
         loc="upper left",
         bbox_to_anchor=(1.02, 1.0),
         borderaxespad=0,
@@ -131,7 +268,20 @@ def main():
 
     final_visited = set(trajectory)
     final_frontier = compute_frontier(rows, cols, grid, final_visited)
-    final_image = build_image(rows, cols, grid, final_visited, final_frontier)
+    final_immediate = set()
+    final_second_step = set()
+    if algo_name == "stc_twostep":
+        final_frontier = set()
+        final_immediate = twostep_frontier_snapshots[len(trajectory) - 1]
+    final_image = build_image(
+        rows,
+        cols,
+        grid,
+        final_visited,
+        final_frontier,
+        final_immediate,
+        final_second_step,
+    )
     image_artist.set_data(final_image)
     path_line.set_data([col for _, col in trajectory], [row for row, _ in trajectory])
     robot_row, robot_col = trajectory[-1]
@@ -144,7 +294,12 @@ def main():
         partial = trajectory[: frame_index + 1]
         visited = set(partial)
         frontier = compute_frontier(rows, cols, grid, visited)
-        image_artist.set_data(build_image(rows, cols, grid, visited, frontier))
+        immediate = set()
+        second_step = set()
+        if algo_name == "stc_twostep":
+            frontier = set()
+            immediate = twostep_frontier_snapshots[frame_index]
+        image_artist.set_data(build_image(rows, cols, grid, visited, frontier, immediate, second_step))
 
         xs = [col for _, col in partial]
         ys = [row for row, _ in partial]

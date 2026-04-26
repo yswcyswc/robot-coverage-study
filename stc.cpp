@@ -9,15 +9,23 @@
 #include <algorithm>
 
 /*
-STC1-style strict Spanning Tree Coverage implementation.
+Spanning Tree Coverage implementation.
 
-This file follows the main idea of the STC1 algorithm from:
-https://ieeexplore.ieee.org/document/1013479
-with some simplification on 
+This implementation is inspired by the offline STC idea from Gabriely and Rimon,
+"Spanning-tree based coverage of continuous areas by a mobile robot"
+(Annals of Mathematics and Artificial Intelligence, 2001).
+https://link.springer.com/article/10.1023/A:1016610507833
+
+The original paper covers a continuous area using a square tool, builds a
+spanning tree over 2D-size cells, and traces around that tree through D-size
+sub-cells. This simplified implementation applies the same high-level idea to an already
+discrete grid: each valid 2x2 block becomes a major cell, a spanning tree is
+built over those major cells, and the tree is converted into grid moves.
 
 The implementation is "strict" because it only allows 2x2 major cells whose
-four original grid cells are all free. It does not implement STC2's partially
-occupied major cells or edge-type-dependent motion rules.
+four original grid cells are all free. It does not implement partially occupied
+major cells, online sensing, ant-like markers, weighted tree shaping, or
+boundary-following passes for exact obstacle-edge coverage.
 
 High-level flow:
 1. Compress the original grid into 2x2 major cells.
@@ -192,8 +200,7 @@ std::vector<Point> buildRoundTrip(Point last, Point pivot) {
 }
 
 Point findIntermediateNode(
-    Point from,
-    Point to,
+    Point from, Point to,
     const std::set<std::pair<std::pair<int, int>, std::pair<int, int>>>& edges) {
     int dr[] = {1, 0, -1, 0};
     int dc[] = {0, 1, 0, -1};
@@ -236,8 +243,7 @@ void buildCoverageRoute(
     std::vector<std::vector<int>>& visit_counts,
     std::vector<Point>& route,
     std::set<std::pair<std::pair<int, int>, std::pair<int, int>>>& edges,
-    int cell_rows, int cell_cols,
-    int rows, int cols,
+    int cell_rows, int cell_cols, int rows, int cols,
     const std::vector<std::string>& grid) {
     route.push_back(curr);
 

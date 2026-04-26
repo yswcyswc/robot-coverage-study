@@ -11,7 +11,7 @@
 Grid boustrophedon decomposition with lawnmower coverage.
 https://publications.ri.cmu.edu/storage/publications/pub_files/pub1/choset_howie_1997_5/choset_howie_1997_5.pdf
 
-This is a discrete version of the boustrophedon idea from the above paper:
+This is a discrete, simplified version of the boustrophedon idea from the above paper:
 1. Sweep the grid column by column.
 2. In each column, extract contiguous free vertical intervals.
 3. Compare current intervals with previous-column intervals.
@@ -213,10 +213,7 @@ static void buildDfsWalk(const std::vector<DecompositionCell>& cells,
 }
 
 static std::vector<Point> buildBfsPath(
-    Point start,
-    Point goal,
-    int rows,
-    int cols,
+    Point start, Point goal, int rows, int cols,
     const std::vector<std::string>& grid) {
     if (samePoint(start, goal)) {
         return {};
